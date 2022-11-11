@@ -1,276 +1,122 @@
-use_bpm 150
+use_bpm 135
+run_file "~/she-used-to-be-mine/she-used-to-be-mine-lyrics.rb"
 
 BEAT = 1
 BEATS_PER_BAR = 12
 BAR = BEAT * BEATS_PER_BAR
-COUNT_IN = 1 * BAR
+COUNT_IN_BARS = 1
+
+define :organic_beat do
+  BEAT * rrand(995, 1005) / 1000
+end
+
+define :count_in do
+  COUNT_IN_BARS * BEATS_PER_BAR * organic_beat
+end
+
+G_MAJOR = { root: :G2, harmony: chord(:G2, :major) }
+D_MAJOR = { root: :D2, harmony: chord(:D2, :major) }
+E_MINOR = { root: :E2, harmony: chord(:E2, :minor) }
+C_MAJOR = { root: :C3, harmony: chord(:C3, :major) }
+B_SEVEN = { root: :B2, harmony: chord(:B2, '7')    }
+
+INTRO       = [G_MAJOR]
+VERSE_ONE   = [G_MAJOR, D_MAJOR, E_MINOR, C_MAJOR]
+VERSE_TWO   = [G_MAJOR, D_MAJOR, E_MINOR, C_MAJOR]
+CHORUS      = [G_MAJOR, D_MAJOR, E_MINOR, C_MAJOR,
+               G_MAJOR, D_MAJOR, E_MINOR, C_MAJOR,
+               G_MAJOR]
+VERSE_THREE = [G_MAJOR, D_MAJOR, E_MINOR, C_MAJOR]
+VERSE_FOUR  = [G_MAJOR, B_SEVEN, E_MINOR, C_MAJOR]
+BRIDGE      = [G_MAJOR, D_MAJOR, E_MINOR, C_MAJOR,
+               G_MAJOR, B_SEVEN, E_MINOR, C_MAJOR,
+               G_MAJOR, B_SEVEN, E_MINOR, C_MAJOR]
+OUTRO       = [G_MAJOR, D_MAJOR, E_MINOR, C_MAJOR,
+               G_MAJOR]
+
+SONG_BARS = [INTRO, VERSE_ONE, VERSE_TWO, CHORUS,
+             VERSE_THREE,VERSE_FOUR, BRIDGE, OUTRO].flatten
+
+TOTAL_BARS = COUNT_IN_BARS + SONG_BARS.size
+
+# lyrics
+in_thread do
+  sleep count_in
+  sleep (INTRO.size - 1) * BEATS_PER_BAR
+  sleep BEATS_PER_BAR * 0.75
+  LYRICS.each do |line|
+    puts line unless line.empty?
+    sleep BAR
+  end
+end
+
+# live guitar
+in_thread do
+  with_fx :reverb, mix: 0.7 do
+    live_audio :guitar, input: 1
+  end
+end
 
 # drum loop
 in_thread do
-  loop do
-    with_fx :level, amp: 0.05 do
+  TOTAL_BARS.times do
+    with_fx :level, amp: 0.2 do
       sample :drum_bass_hard
-      sleep 1
+      sleep organic_beat
       sample :drum_bass_soft
-      sleep 1
+      sleep organic_beat
       sample :drum_bass_soft
+      sleep organic_beat
+      3.times do
+        sample :drum_heavy_kick, amp: 0.75
+        sleep organic_beat
+        sample :drum_bass_soft
+        sleep organic_beat
+        sample :drum_bass_soft
+        sleep organic_beat
+      end
+    end
+  end
+end
+
+# tambourine
+in_thread do
+  sleep count_in
+  sleep [INTRO, VERSE_ONE, VERSE_TWO].flatten.size * BAR
+  sleep (CHORUS.size - 1) * BAR
+  [VERSE_THREE, VERSE_FOUR, BRIDGE].flatten.size.times do
+    2.times do
+      sample :drum_cymbal_pedal, amp: 0.1
       sleep 1
-      sample :drum_bass_hard
+      sample :drum_cymbal_pedal, amp: 0.1
       sleep 1
-      sample :drum_bass_soft
+      sample :drum_cymbal_pedal, amp: 0.1
       sleep 1
-      sample :drum_bass_soft
+      sample :drum_cymbal_closed, amp: 0.2
+      sleep 1
+      sample :drum_cymbal_pedal, amp: 0.1
+      sleep 1
+      sample :drum_cymbal_pedal, amp: 0.1
       sleep 1
     end
   end
 end
 
-# in_thread do
-#   with_fx :reverb do
-#     live_audio :foo, input: 1
-#   end
-# end
-
-# pad
+# synth pad and bass
 in_thread do
-  sleep 1 * BAR
   
-  use_synth :bass_foundation
+  sleep count_in
   
-  # chorus
-  # she's imperfect, but she tries
-  play :G2, sustain: 3 * BEAT, release: 3 * BEAT
-  sleep 6 * BEAT
-  play :G2, sustain: 3 * BEAT, release: 3 * BEAT
-  sleep 6 * BEAT
-  
-  # she is good, but she lies
-  play :D2, sustain: 3 * BEAT, release: 3 * BEAT
-  sleep 6 * BEAT
-  play :D2, sustain: 3 * BEAT, release: 2 * BEAT
-  sleep 5 * BEAT
-  play :Ds2, sustain: 0.5 * BEAT, release: 0.5 * BEAT, amp: 0.5
-  sleep 1 * BEAT
-  
-  # she is hard on herself
-  play :E2, sustain: 3 * BEAT, release: 3 * BEAT
-  sleep 6 * BEAT
-  play :E2, sustain: 3 * BEAT, release: 2 * BEAT
-  sleep 5 * BEAT
-  play :G2, sustain: 0.5 * BEAT, release: 0.5 * BEAT, amp: 0.5
-  sleep 1 * BEAT
-  
-  # she is broken and won't ask for help
-  play :C3, sustain: 3 * BEAT, release: 3 * BEAT
-  sleep 6 * BEAT
-  play :C3, sustain: 3 * BEAT, release: 2 * BEAT
-  sleep 5 * BEAT
-  play :B2, sustain: 0.5 * BEAT, release: 0.5 * BEAT, amp: 0.5
-  sleep 1 * BEAT
-  
-  # she is messy but she's kind
-  play :G2, sustain: 3 * BEAT, release: 2 * BEAT
-  sleep 5 * BEAT
-  play :D2, sustain: 0.5 * BEAT, release: 0.5 * BEAT, amp: 0.5
-  sleep 1 * BEAT
-  play :G2, sustain: 3 * BEAT, release: 3 * BEAT
-  sleep 6 * BEAT
-  
-  # she is lonely most of the time
-  play :D2, sustain: 3 * BEAT, release: 2 * BEAT
-  sleep 5 * BEAT
-  play :A2, sustain: 0.5 * BEAT, release: 0.5 * BEAT, amp: 0.5
-  sleep 1 * BEAT
-  play :D2, sustain: 3 * BEAT, release: 3 * BEAT
-  sleep 6 * BEAT
-  
-  # she is all of this mixed up and baked in a beautiful pie
-  play :E2, sustain: 3 * BEAT, release: 3 * BEAT
-  sleep 6 * BEAT
-  play :E2, sustain: 3 * BEAT, release: 2 * BEAT
-  sleep 5 * BEAT
-  play :G2, sustain: 0.5 * BEAT, release: 0.5 * BEAT, amp: 0.5
-  sleep 1 * BEAT
-  
-  # she is gone, but she used to be mine
-  play :C3, sustain: 3 * BEAT, release: 3 * BEAT
-  sleep 6 * BEAT
-  play :C3, sustain: 2 * BEAT, release: 2 * BEAT
-  sleep 4 * BEAT
-  play :B2, sustain: 0.5 * BEAT, release: 0.5 * BEAT, amp: 0.5
-  sleep 1 * BEAT
-  play :A2, sustain: 0.5 * BEAT, release: 0.5 * BEAT, amp: 0.5
-  sleep 1 * BEAT
-  
-  play :G2, sustain: 3 * BEAT, release: 3 * BEAT
-  sleep 6 * BEAT
-  play :G2, sustain: 3 * BEAT, release: 3 * BEAT
-  sleep 6 * BEAT
-  
-  # verse 3
-  # it's not what I asked for
-  play chord(:G3, :maj), sustain: 6 * BEAT, release: 6 * BEAT
-  play :G2, sustain: 3 * BEAT, release: 3 * BEAT
-  sleep 6 * BEAT
-  play :G2, sustain: 3 * BEAT, release: 3 * BEAT
-  sleep 6 * BEAT
-  
-  # sometimes life just slips in through a back door
-  play chord(:D3, :maj), sustain: 6 * BEAT, release: 6 * BEAT
-  play :D2, sustain: 3 * BEAT, release: 3 * BEAT
-  sleep 6 * BEAT
-  play :D2, sustain: 3 * BEAT, release: 3 * BEAT
-  sleep 6 * BEAT
-  
-  # and carves out a person who makes you believe it's all true
-  play chord(:E3, :m), sustain: 6 * BEAT, release: 6 * BEAT
-  play :E2, sustain: 3 * BEAT, release: 3 * BEAT
-  sleep 6 * BEAT
-  play :E2, sustain: 3 * BEAT, release: 2 * BEAT
-  sleep 5 * BEAT
-  play :G2, sustain: 0.5 * BEAT, release: 0.5 * BEAT, amp: 0.5
-  sleep 1 * BEAT
-  
-  # and now I've got you
-  play chord(:C4, :maj), sustain: 6 * BEAT, release: 6 * BEAT
-  play :C3, sustain: 3 * BEAT, release: 3 * BEAT
-  sleep 6 * BEAT
-  play :C3, sustain: 3 * BEAT, release: 2 * BEAT
-  sleep 5 * BEAT
-  play :B2, sustain: 0.5 * BEAT, release: 0.5 * BEAT, amp: 0.5
-  sleep 1 * BEAT
-  
-  # verse 4
-  # you're not what I asked for
-  play chord(:G3, :maj), sustain: 6 * BEAT, release: 6 * BEAT
-  play :G2, sustain: 3 * BEAT, release: 3 * BEAT
-  sleep 6 * BEAT
-  play :G2, sustain: 3 * BEAT, release: 3 * BEAT
-  sleep 6 * BEAT
-  
-  # if I'm honest I know I would give it all back
-  play chord(:B3, '7'), sustain: 6 * BEAT, release: 6 * BEAT
-  play :B2, sustain: 3 * BEAT, release: 3 * BEAT
-  sleep 6 * BEAT
-  play :B2, sustain: 2 * BEAT, release: 1 * BEAT
-  sleep 3 * BEAT
-  play :B2, sustain: 0.5 * BEAT, release: 0.5 * BEAT, amp: 0.5
-  sleep 1 * BEAT
-  play :A2, sustain: 0.5 * BEAT, release: 0.5 * BEAT, amp: 0.5
-  sleep 1 * BEAT
-  play :Ds2, sustain: 0.5 * BEAT, release: 0.5 * BEAT, amp: 0.5
-  sleep 1 * BEAT
-  
-  # for a chance to start over and rewrite an ending or two
-  play chord(:E3, :m), sustain: 6 * BEAT, release: 6 * BEAT
-  play :E2, sustain: 3 * BEAT, release: 3 * BEAT
-  sleep 6 * BEAT
-  play :E2, sustain: 2 * BEAT, release: 1 * BEAT
-  sleep 4 * BEAT
-  play :Fs2, sustain: 0.5 * BEAT, release: 0.5 * BEAT, amp: 0.5
-  sleep 1 * BEAT
-  play :G2, sustain: 1 * BEAT, release: 1 * BEAT, amp: 0.5
-  sleep 1 * BEAT
-  
-  # for the girl that I knew
-  play chord(:C4, :maj), sustain: 3 * BEAT, release: 3 * BEAT
-  play :C3, sustain: 3 * BEAT, release: 3 * BEAT
-  sleep 6 * BEAT
-  play chord(:C4, :maj), sustain: 3 * BEAT, release: 3 * BEAT
-  play :C3, sustain: 2 * BEAT, release: 2 * BEAT
-  sleep 4 * BEAT
-  play :B2, sustain: 1 * BEAT, release: 1 * BEAT, amp: 0.5
-  sleep 2 * BEAT
-  
-  # bridge
-  # who was reckless, just enough
-  play chord(:G3, :maj), sustain: 3 * BEAT, release: 3 * BEAT
-  play :G2, sustain: 3 * BEAT, release: 3 * BEAT
-  sleep 6 * BEAT
-  play chord(:G3, :maj), sustain: 3 * BEAT, release: 3 * BEAT
-  play :G2, sustain: 2 * BEAT, release: 1 * BEAT
-  sleep 3 * BEAT
-  play :G2, sustain: 0.5 * BEAT, release: 0.5 * BEAT, amp: 0.5
-  sleep 1 * BEAT
-  play :Fs2, sustain: 1 * BEAT, release: 1 * BEAT, amp: 0.5
-  sleep 2 * BEAT
-  
-  # who gets hurt, but who learns how to toughen up
-  play chord(:D3, :maj), sustain: 3 * BEAT, release: 3 * BEAT
-  play :D2, sustain: 3 * BEAT, release: 3 * BEAT
-  sleep 6 * BEAT
-  play chord(:D3, :maj), sustain: 2 * BEAT, release: 1 * BEAT
-  play :D2, sustain: 2 * BEAT, release: 1 * BEAT
-  sleep 2 * BEAT
-  play :D2, sustain: 0.5 * BEAT, release: 0.5 * BEAT, amp: 0.5
-  sleep 1 * BEAT
-  play chord(:D3, :maj), sustain: 2 * BEAT, release: 1 * BEAT
-  play :D2, sustain: 0.5 * BEAT, release: 0.5 * BEAT, amp: 0.5
-  sleep 1 * BEAT
-  play :D2, sustain: 0.5 * BEAT, release: 0.5 * BEAT, amp: 0.5
-  sleep 1 * BEAT
-  play :Ds2, sustain: 0.5 * BEAT, release: 0.5 * BEAT, amp: 0.5
-  sleep 1 * BEAT
-  
-  # when she's bruised and gets used by a man who can't love
-  play chord(:E3, :m), sustain: 3 * BEAT, release: 3 * BEAT
-  play :E2, sustain: 3 * BEAT, release: 3 * BEAT
-  sleep 6 * BEAT
-  play chord(:E3, :m), sustain: 3 * BEAT, release: 3 * BEAT
-  play :E2, sustain: 2 * BEAT, release: 1 * BEAT
-  sleep 3 * BEAT
-  play :E2, sustain: 0.5 * BEAT, release: 0.5 * BEAT, amp: 0.5
-  sleep 1 * BEAT
-  play :G2, sustain: 1 * BEAT, release: 1 * BEAT, amp: 0.5
-  sleep 2 * BEAT
-  
-  # then she'll get stuck
-  
-  # and be scared of the life that's inside her
-  play chord(:G3, :maj), sustain: 3 * BEAT, release: 3 * BEAT
-  play :G2, sustain: 3 * BEAT, release: 3 * BEAT
-  sleep 6 * BEAT
-  play chord(:G3, :maj), sustain: 3 * BEAT, release: 3 * BEAT
-  play :G2, sustain: 2 * BEAT, release: 1 * BEAT
-  sleep 3 * BEAT
-  play :Fs2, sustain: 0.5 * BEAT, release: 0.5 * BEAT, amp: 0.5
-  sleep 1 * BEAT
-  play :G2, sustain: 0.5 * BEAT, release: 0.5 * BEAT, amp: 0.5
-  sleep 1 * BEAT
-  play :A2, sustain: 0.5 * BEAT, release: 0.5 * BEAT, amp: 0.5
-  sleep 1 * BEAT
-  
-  # getting stronger each day, till it finally reminds her
-  play chord(:B3, '7'), sustain: 3 * BEAT, release: 3 * BEAT
-  play :B2, sustain: 3 * BEAT, release: 3 * BEAT
-  sleep 6 * BEAT
-  play chord(:B3, '7'), sustain: 3 * BEAT, release: 3 * BEAT
-  play :Ds3, sustain: 2 * BEAT, release: 1 * BEAT
-  sleep 3 * BEAT
-  play :B2, sustain: 1 * BEAT, release: 1 * BEAT, amp: 0.5
-  sleep 2 * BEAT
-  play :Fs2, sustain: 0.5 * BEAT, release: 0.5 * BEAT, amp: 0.5
-  sleep 1 * BEAT
-  
-  # to fight just a little and bring back the fire in her eyes
-  play chord(:E3, :m), sustain: 3 * BEAT, release: 3 * BEAT
-  play :E2, sustain: 3 * BEAT, release: 3 * BEAT
-  sleep 6 * BEAT
-  play chord(:E3, :m), sustain: 3 * BEAT, release: 3 * BEAT
-  play :E2, sustain: 3 * BEAT, release: 2 * BEAT
-  sleep 5 * BEAT
-  play :Fs2, sustain: 0.5 * BEAT, release: 0.5 * BEAT, amp: 0.5
-  sleep 1 * BEAT
-  
-  # that's been gone but used to be mine
-  play chord(:C4, :maj), sustain: 3 * BEAT, release: 3 * BEAT
-  play :C3, sustain: 3 * BEAT, release: 3 * BEAT
-  sleep 6 * BEAT
-  play chord(:C4, :maj), sustain: 3 * BEAT, release: 3 * BEAT
-  play :C3, sustain: 2 * BEAT, release: 2 * BEAT
-  sleep 4 * BEAT
-  play :B2, sustain: 1 * BEAT, release: 1 * BEAT, amp: 0.5
-  sleep 2 * BEAT
-  
-  
+  SONG_BARS.each do |note|
+    unless note.nil?
+      use_synth :bass_foundation
+      play note[:root], sustain: 8 * organic_beat, release: 3 * organic_beat, amp: 0.6
+      play note[:harmony], sustain: 8 * organic_beat, release: 3 * organic_beat
+      
+      use_synth :organ_tonewheel
+      play note[:root], sustain: 10 * organic_beat, release: 2 * organic_beat, amp: 0.5
+    end
+    sleep BAR
+  end
 end
+
