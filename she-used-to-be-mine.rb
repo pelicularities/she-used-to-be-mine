@@ -79,25 +79,18 @@ in_thread do
   end
 end
 
-# tambourine
+# hi-hat loop
 in_thread do
   sleep count_in
-  sleep [INTRO, VERSE_ONE, VERSE_TWO].flatten.size * BAR
-  sleep (CHORUS.size - 1) * BAR
+  sleep ([INTRO, VERSE_ONE, VERSE_TWO, CHORUS].flatten.size - 1) * BEATS_PER_BAR
   [VERSE_THREE, VERSE_FOUR, BRIDGE].flatten.size.times do
-    2.times do
-      sample :drum_cymbal_pedal, amp: 0.1
-      sleep 1
-      sample :drum_cymbal_pedal, amp: 0.1
-      sleep 1
-      sample :drum_cymbal_pedal, amp: 0.1
-      sleep 1
-      sample :drum_cymbal_closed, amp: 0.2
-      sleep 1
-      sample :drum_cymbal_pedal, amp: 0.1
-      sleep 1
-      sample :drum_cymbal_pedal, amp: 0.1
-      sleep 1
+    with_fx :level, amp: 0.2 do
+      2.times do
+        sample :drum_cymbal_pedal
+        sleep 0.25 * BAR
+        sample :drum_cymbal_closed
+        sleep 0.25 * BAR
+      end
     end
   end
 end
