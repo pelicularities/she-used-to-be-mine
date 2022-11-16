@@ -59,23 +59,22 @@ end
 
 # drum loop
 in_thread do
-  TOTAL_BARS.times do
-    with_fx :level, amp: 0.2 do
-      sample :drum_bass_hard
+  with_fx :level, amp: 0.2 do
+    sample :drum_bass_hard
+    sleep organic_beat
+    sample :drum_bass_soft
+    sleep organic_beat
+    sample :drum_bass_soft
+    sleep organic_beat
+    3.times do
+      sample :drum_heavy_kick, amp: 0.75
       sleep organic_beat
       sample :drum_bass_soft
       sleep organic_beat
       sample :drum_bass_soft
       sleep organic_beat
-      3.times do
-        sample :drum_heavy_kick, amp: 0.75
-        sleep organic_beat
-        sample :drum_bass_soft
-        sleep organic_beat
-        sample :drum_bass_soft
-        sleep organic_beat
-      end
     end
+    sample :drum_bass_hard
   end
 end
 
@@ -97,9 +96,7 @@ end
 
 # synth pad and bass
 in_thread do
-  
   sleep count_in
-  
   SONG_BARS.each do |note|
     unless note.nil?
       use_synth :bass_foundation
