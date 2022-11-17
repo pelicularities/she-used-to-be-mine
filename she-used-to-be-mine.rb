@@ -31,7 +31,7 @@ VERSE_FOUR  = [G_MAJOR, B_SEVEN, E_MINOR, C_MAJOR]
 BRIDGE      = [G_MAJOR, D_MAJOR, E_MINOR, C_MAJOR,
                G_MAJOR, B_SEVEN, E_MINOR, C_MAJOR,
                G_MAJOR, B_SEVEN, E_MINOR, C_MAJOR]
-OUTRO       = [G_MAJOR, D_MAJOR, E_MINOR, C_MAJOR,
+OUTRO       = [G_MAJOR, nil, nil, nil,
                nil]
 
 SONG_BARS = [INTRO, VERSE_ONE, VERSE_TWO, CHORUS,
@@ -50,10 +50,17 @@ in_thread do
   end
 end
 
+# voice
+in_thread do
+  with_fx :reverb, mix: 0.8 do
+    live_audio :voice, input: 2
+  end
+end
+
 # live guitar
 in_thread do
   with_fx :reverb, mix: 0.8 do
-    with_fx :distortion, amp: 1, distort: 0.9, mix: 1 do
+    with_fx :distortion, amp: 0.7, distort: 0.9, mix: 1 do
       live_audio :guitar, input: 1
     end
   end
@@ -89,10 +96,6 @@ in_thread do
   end
   sample :drum_cymbal_open, amp: 0.2
   sleep 0.25 * BAR
-  sample :drum_cymbal_open, amp: 0.2
-  sleep 0.25 * BAR
-  sample :drum_cymbal_open, amp: 0.2
-  sleep 0.25 * BAR
 end
 
 # synth pad and bass
@@ -103,7 +106,7 @@ in_thread do
       use_synth :bass_foundation
       play note[:root], sustain: 8 * organic_beat, release: 3 * organic_beat, amp: 0.1
       play note[:harmony], sustain: 8 * organic_beat, release: 3 * organic_beat, amp: 0.2
-      
+
       use_synth :organ_tonewheel
       play note[:root], sustain: 10 * organic_beat, release: 2 * organic_beat, amp: 0.2
     end
