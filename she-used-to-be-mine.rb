@@ -32,12 +32,12 @@ BRIDGE      = [G_MAJOR, D_MAJOR, E_MINOR, C_MAJOR,
                G_MAJOR, B_SEVEN, E_MINOR, C_MAJOR,
                G_MAJOR, B_SEVEN, E_MINOR, C_MAJOR]
 OUTRO       = [G_MAJOR, D_MAJOR, E_MINOR, C_MAJOR,
-               G_MAJOR]
+               nil]
 
 SONG_BARS = [INTRO, VERSE_ONE, VERSE_TWO, CHORUS,
              VERSE_THREE,VERSE_FOUR, BRIDGE, OUTRO].flatten
 
-TOTAL_BARS = COUNT_IN_BARS + SONG_BARS.size
+DRUM_BARS_COUNT = COUNT_IN_BARS + [INTRO, VERSE_ONE, VERSE_TWO, CHORUS].flatten.size
 
 # lyrics
 in_thread do
@@ -52,29 +52,24 @@ end
 
 # live guitar
 in_thread do
-  with_fx :reverb, mix: 0.7 do
-    live_audio :guitar, input: 1
+  with_fx :reverb, mix: 0.8 do
+    with_fx :distortion, amp: 1, distort: 0.9, mix: 1 do
+      live_audio :guitar, input: 1
+    end
   end
 end
 
 # drum loop
 in_thread do
-  with_fx :level, amp: 0.2 do
-    sample :drum_bass_hard
-    sleep organic_beat
-    sample :drum_bass_soft
-    sleep organic_beat
-    sample :drum_bass_soft
-    sleep organic_beat
-    3.times do
-      sample :drum_heavy_kick, amp: 0.75
-      sleep organic_beat
-      sample :drum_bass_soft
-      sleep organic_beat
-      sample :drum_bass_soft
-      sleep organic_beat
+  with_fx :level, amp: 0.05 do
+    DRUM_BARS_COUNT.times do
+      sample :drum_bass_hard
+      sleep 0.25 * BAR
+      3.times do
+        sample :drum_heavy_kick, amp: 0.75
+        sleep 0.25 * BAR
+      end
     end
-    sample :drum_bass_hard
   end
 end
 
@@ -92,6 +87,12 @@ in_thread do
       end
     end
   end
+  sample :drum_cymbal_open, amp: 0.2
+  sleep 0.25 * BAR
+  sample :drum_cymbal_open, amp: 0.2
+  sleep 0.25 * BAR
+  sample :drum_cymbal_open, amp: 0.2
+  sleep 0.25 * BAR
 end
 
 # synth pad and bass
@@ -100,13 +101,12 @@ in_thread do
   SONG_BARS.each do |note|
     unless note.nil?
       use_synth :bass_foundation
-      play note[:root], sustain: 8 * organic_beat, release: 3 * organic_beat, amp: 0.6
-      play note[:harmony], sustain: 8 * organic_beat, release: 3 * organic_beat
+      play note[:root], sustain: 8 * organic_beat, release: 3 * organic_beat, amp: 0.1
+      play note[:harmony], sustain: 8 * organic_beat, release: 3 * organic_beat, amp: 0.2
       
       use_synth :organ_tonewheel
-      play note[:root], sustain: 10 * organic_beat, release: 2 * organic_beat, amp: 0.5
+      play note[:root], sustain: 10 * organic_beat, release: 2 * organic_beat, amp: 0.2
     end
     sleep BAR
   end
 end
-
