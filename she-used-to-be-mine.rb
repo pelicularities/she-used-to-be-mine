@@ -1,26 +1,5 @@
 use_bpm 135
-run_file "~/she-used-to-be-mine/she-used-to-be-mine-lyrics.rb"
-
-BEAT = 1
-BEATS_PER_BAR = 12
-BAR = BEAT * BEATS_PER_BAR
-COUNT_IN_BARS = 1
-
-define :organic_beat do
-  BEAT * rrand(995, 1005) / 1000
-end
-
-define :count_in do
-  COUNT_IN_BARS * BEATS_PER_BAR * organic_beat
-end
-
-G_MAJOR = { root: :G2, harmony: chord(:G2, :major) }
-D_MAJOR = { root: :D2, harmony: chord(:D2, :major) }
-E_MINOR = { root: :E2, harmony: chord(:E2, :minor) }
-C_MAJOR = { root: :C3, harmony: chord(:C3, :major) }
-B_SEVEN = { root: :B2, harmony: chord(:B2, '7')    }
-
-song = Song.new
+run_file "~/code/she-used-to-be-mine/she-used-to-be-mine-lyrics.rb"
 
 MAIN = self
 class Parent < SimpleDelegator
@@ -51,173 +30,139 @@ class Song < Parent
     @beat * rrand(995, 1005) / 1000
   end
   
-  def count_in
-    with_fx :level, amp: 0.2 do
-      sample :drum_bass_hard
-      sleep organic_beat
-      sample :drum_bass_soft
-      sleep organic_beat
-      sample :drum_bass_soft
-      sleep organic_beat
-      3.times do
-        sample :drum_heavy_kick, amp: 0.75
-        sleep organic_beat
-        sample :drum_bass_soft
-        sleep organic_beat
-        sample :drum_bass_soft
-        sleep organic_beat
+  def print_lyrics(lyrics)
+    in_thread do
+      sleep @beats_per_bar * 0.75
+      lyrics.each do |line|
+        puts line unless line.empty?
+        sleep @bar
       end
-      sample :drum_bass_hard
     end
   end
   
-  def play_bars(bars = [])
+  def play_accompaniment(bars = [])
     bars.each do |note|
       use_synth :bass_foundation
-      play note[:root], sustain: 8 * organic_beat, release: 3 * organic_beat, amp: 0.6
-      play note[:harmony], sustain: 8 * organic_beat, release: 3 * organic_beat
+      play note[:root], sustain: 8 * organic_beat, release: 3 * organic_beat, amp: 0.1
+      play note[:harmony], sustain: 8 * organic_beat, release: 3 * organic_beat, amp: 0.2
       
       use_synth :organ_tonewheel
-      play note[:root], sustain: 10 * organic_beat, release: 2 * organic_beat, amp: 0.5
+      play note[:root], sustain: 10 * organic_beat, release: 2 * organic_beat, amp: 0.2
       sleep @bar
     end
   end
   
-  def play_rhythm_bar
+  def play_hi_hats
     with_fx :level, amp: 0.2 do
       2.times do
         sample :drum_cymbal_pedal
-        sleep 0.25 * BAR
+        sleep 0.25 * @bar
         sample :drum_cymbal_closed
-        sleep 0.25 * BAR
+        sleep 0.25 * @bar
       end
     end
   end
   
-  def play_intro
-    bars = [G_MAJOR]
-    in_thread do
-      play_bars(bars)
+  def play_beats
+    with_fx :level, amp: 0.05 do
+      sample :drum_bass_hard
+      sleep 0.25 * @bar
+      3.times do
+        sample :drum_heavy_kick, amp: 0.75
+        sleep 0.25 * @bar
+      end
     end
   end
   
-  def play_verse_one
-    bars = [G_MAJOR, D_MAJOR, E_MINOR, C_MAJOR]
-    in_thread do
-      play_bars(bars)
-    end
+  def count_in
+    play_beats
   end
   
-  def play_verse_two
-    bars = [G_MAJOR, D_MAJOR, E_MINOR, C_MAJOR]
+  def play_verse_with_drums(bars = [])
     in_thread do
-      play_bars(bars)
-    end
-  end
-  
-  def play_chorus
-    bars = [G_MAJOR, D_MAJOR, E_MINOR, C_MAJOR,
-            G_MAJOR, D_MAJOR, E_MINOR, C_MAJOR,
-            G_MAJOR]
-    
-    # accompaniment
-    in_thread do
-      play_bars(bars)
+      play_accompaniment(bars)
     end
     
-    # hi-hat lead-in
+    in_thread do
+      bars.size.times { play_beats }
+    end
+    
+    sleep bars.size * @bar
+  end
+  
+  def play_chorus(bars = [])
+    in_thread do
+      play_accompaniment(bars)
+    end
+    
+    in_thread do
+      bars.size.times { play_beats }
+    end
+    
     in_thread do
       (bars.size - 1).times { sleep @bar }
-      1.times { play_rhythm_bar }
+      1.times { play_hi_hats }
     end
+    
+    sleep bars.size * @bar
   end
   
-  def play_verse_three
-    bars = [G_MAJOR, D_MAJOR, E_MINOR, C_MAJOR]
-    
-    # accompaniment
+  def play_verse_with_hi_hats(bars = [])
     in_thread do
-      play_bars(bars)
+      play_accompaniment(bars)
     end
     
-    # hi-hat
     in_thread do
-      bars.size.times { play_rhythm_bar }
+      bars.size.times { play_hi_hats }
     end
+    
+    sleep bars.size * @bar
   end
   
-  def play_verse_four
-    bars = [G_MAJOR, B_SEVEN, E_MINOR, C_MAJOR]
-    
-    # accompaniment
+  def play_bridge(bars = [])
     in_thread do
-      play_bars(bars)
+      play_accompaniment(bars)
     end
     
-    # hi-hat
     in_thread do
-      bars.size.times { play_rhythm_bar }
+      (bars.size - 1).times { play_hi_hats }
+      sample :drum_cymbal_open, amp: 0.15
     end
+    sleep bars.size * @bar
   end
-  
-  def play_bridge
-    bars = [G_MAJOR, D_MAJOR, E_MINOR, C_MAJOR,
-            G_MAJOR, B_SEVEN, E_MINOR, C_MAJOR,
-            G_MAJOR, B_SEVEN, E_MINOR, C_MAJOR]
-    
-    # accompaniment
-    in_thread do
-      play_bars(bars)
-    end
-    
-    # hi-hat
-    in_thread do
-      (bars.size - 1).times { play_rhythm_bar }
-    end
+end
+
+song = Song.new
+
+# voice
+in_thread do
+  with_fx :reverb, mix: 0.8 do
+    live_audio :voice, input: 2
   end
-  
-  def play_outro
-    bars = [G_MAJOR, D_MAJOR, E_MINOR, C_MAJOR,
-            G_MAJOR]
-    
-    # accompaniment
-    in_thread do
-      play_bars(bars)
+end
+
+# live guitar
+in_thread do
+  with_fx :reverb, mix: 0.8 do
+    with_fx :distortion, amp: 0.7, distort: 0.9, mix: 1 do
+      live_audio :guitar, input: 1
     end
   end
 end
 
-##| # live guitar
-##| in_thread do
-##|   with_fx :reverb, mix: 0.7 do
-##|     live_audio :guitar, input: 1
-##|   end
-##| end
-
 in_thread do
   song.count_in
-  
-  song.play_intro
-  sleep song.bar
-  
-  song.play_verse_one
-  sleep 4 * song.bar
-  
-  song.play_verse_two
-  sleep 4 * song.bar
-  
-  song.play_chorus
-  sleep 9 * song.bar
-  
-  song.play_verse_three
-  sleep 4 * song.bar
-  
-  song.play_verse_four
-  sleep 4 * song.bar
-  
-  song.play_bridge
-  sleep 12 * song.bar
-  
-  song.play_outro
-  sleep 4 * song.bar
+  song.print_lyrics(LYRICS)
+  song.play_verse_with_drums([G_MAJOR])
+  song.play_verse_with_drums([G_MAJOR, D_MAJOR, E_MINOR, C_MAJOR,
+                              G_MAJOR, D_MAJOR, E_MINOR, C_MAJOR])
+  song.play_chorus([G_MAJOR, D_MAJOR, E_MINOR, C_MAJOR,
+                    G_MAJOR, D_MAJOR, E_MINOR, C_MAJOR,
+                    G_MAJOR])
+  song.play_verse_with_hi_hats([G_MAJOR, D_MAJOR, E_MINOR, C_MAJOR,
+                                G_MAJOR, B_SEVEN, E_MINOR, C_MAJOR])
+  song.play_bridge([G_MAJOR, D_MAJOR, E_MINOR, C_MAJOR,
+                    G_MAJOR, B_SEVEN, E_MINOR, C_MAJOR,
+                    G_MAJOR, B_SEVEN, E_MINOR, C_MAJOR])
+  song.play_accompaniment([G_MAJOR])
 end
