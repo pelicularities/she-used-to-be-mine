@@ -95,6 +95,13 @@ class Song < Parent
       play_accompaniment(bars)
     end
     
+    # live guitar
+    in_thread do
+      with_fx :gverb, amp: 0.9, pre_amp: 1.1, mix: 0.9, spread: 1, amp_slide: bars.size * @bar, pre_amp_slide: bars.size * @bar do
+        live_audio :guitar, input: 1
+      end
+    end
+    
     in_thread do
       bars.size.times { play_beats }
     end
@@ -112,6 +119,15 @@ class Song < Parent
       play_accompaniment(bars)
     end
     
+    # live guitar
+    in_thread do
+      with_fx :gverb, amp: 1, pre_amp: 1.2, mix: 0.9, spread: 1, damp: 0.2, amp_slide: bars.size * @bar, pre_amp_slide: bars.size * @bar, damp_slide: bars.size * @bar do
+        with_fx :flanger, amp: 0.7, phase: 12, mix: 1, amp_slide: bars.size * @bar do
+          live_audio :guitar, input: 1
+        end
+      end
+    end
+    
     in_thread do
       bars.size.times { play_hi_hats }
     end
@@ -124,11 +140,59 @@ class Song < Parent
       play_accompaniment(bars)
     end
     
+    guitar_transition = 2
+    voice_transition = 1
+    
+    # live guitar
+    in_thread do
+      with_fx :echo, mix: 0.1, mix_slide: (bars.size - guitar_transition) * @bar do
+        with_fx :gverb, pre_amp: 1.4, mix: 1, spread: 1, damp: 0, pre_amp_slide: (bars.size - guitar_transition) * @bar, damp_slide: (bars.size - guitar_transition) * @bar do
+          with_fx :flanger, amp: 1, phase: 15, mix: 1, amp_slide: (bars.size - guitar_transition) * @bar do
+            live_audio :guitar, input: 1
+          end
+        end
+      end
+    end
+    
+    # live guitar wind down
+    in_thread do
+      sleep (bars.size - guitar_transition) * @bar
+      with_fx :gverb, mix: 0.8, spread: 0.5, damp: 0.5, pre_amp_slide: guitar_transition * @bar, damp_slide: guitar_transition * @bar, spread_slide: guitar_transition * @bar do
+        with_fx :flanger, amp: 1, mix: 0, mix_slide: guitar_transition * @bar do
+          with_fx :echo, mix: 0, mix_slide: (bars.size - guitar_transition) * @bar do
+            live_audio :guitar, input: 1
+          end
+        end
+      end
+    end
+    
+    
+    # voice
+    in_thread do
+      with_fx :reverb, amp: 1, pre_amp: 1.4, mix: 0.9, pre_amp_slide: (bars.size - voice_transition) * @bar, mix_slide: (bars.size - voice_transition) * @bar do
+        live_audio :voice, input: 2
+      end
+    end
+    
+    # voice wind down
+    in_thread do
+      sleep (bars.size - voice_transition) * @bar
+      with_fx :reverb, amp: 1, pre_amp: 1, mix: 0.75, pre_amp_slide: voice_transition * @bar, mix_slide: voice_transition * @bar do
+        live_audio :voice, input: 2
+      end
+    end
+    
     in_thread do
       (bars.size - 1).times { play_hi_hats }
       sample :drum_cymbal_open, amp: 0.15
     end
     sleep bars.size * @bar
+  end
+  
+  def play_outro(bars = [])
+    in_thread do
+      play_accompaniment(bars)
+    end
   end
 end
 
@@ -136,17 +200,15 @@ song = Song.new
 
 # voice
 in_thread do
-  with_fx :reverb, mix: 0.8 do
+  with_fx :reverb, mix: 0.6 do
     live_audio :voice, input: 2
   end
 end
 
 # live guitar
 in_thread do
-  with_fx :reverb, mix: 0.8 do
-    with_fx :distortion, amp: 0.7, distort: 0.9, mix: 1 do
-      live_audio :guitar, input: 1
-    end
+  with_fx :gverb, pre_amp: 1.1, mix: 0.9, spread: 1 do
+    live_audio :guitar, input: 1
   end
 end
 
@@ -164,5 +226,5 @@ in_thread do
   song.play_bridge([G_MAJOR, D_MAJOR, E_MINOR, C_MAJOR,
                     G_MAJOR, B_SEVEN, E_MINOR, C_MAJOR,
                     G_MAJOR, B_SEVEN, E_MINOR, C_MAJOR])
-  song.play_accompaniment([G_MAJOR])
+  song.play_outro([G_MAJOR])
 end
