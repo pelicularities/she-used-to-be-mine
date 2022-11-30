@@ -1,5 +1,5 @@
 use_bpm 135
-run_file "~/code/she-used-to-be-mine/she-used-to-be-mine-lyrics.rb"
+run_file "~/she-used-to-be-mine/she-used-to-be-mine-lyrics.rb"
 
 MAIN = self
 class Parent < SimpleDelegator
@@ -41,19 +41,18 @@ class Song < Parent
   end
   
   def play_accompaniment(bars = [])
-    bars.each do |note|
-      use_synth :bass_foundation
-      play note[:root], sustain: 8 * organic_beat, release: 3 * organic_beat, amp: 0.1
-      play note[:harmony], sustain: 8 * organic_beat, release: 3 * organic_beat, amp: 0.2
-      
-      use_synth :organ_tonewheel
-      play note[:root], sustain: 10 * organic_beat, release: 2 * organic_beat, amp: 0.2
-      sleep @bar
-    end
+    ##| bars.each do |note| use_synth :bass_foundation
+    ##|   play note[:root], sustain: 8 * organic_beat, release: 3 * organic_beat, amp: 0.05
+    ##|   play note[:harmony], sustain: 8 * organic_beat, release: 3 * organic_beat, amp: 0.1
+    
+    ##|   use_synth :organ_tonewheel
+    ##|   play note[:root], sustain: 10 * organic_beat, release: 2 * organic_beat, amp: 0.1
+    ##|   sleep @bar
+    ##| end
   end
   
   def play_hi_hats
-    with_fx :level, amp: 0.2 do
+    with_fx :level, amp: 0.075 do
       2.times do
         sample :drum_cymbal_pedal
         sleep 0.25 * @bar
@@ -64,11 +63,11 @@ class Song < Parent
   end
   
   def play_beats
-    with_fx :level, amp: 0.05 do
+    with_fx :level, amp: 0.015 do
       sample :drum_bass_hard
       sleep 0.25 * @bar
       3.times do
-        sample :drum_heavy_kick, amp: 0.75
+        sample :drum_heavy_kick, amp: 0.25
         sleep 0.25 * @bar
       end
     end
@@ -98,7 +97,9 @@ class Song < Parent
     # live guitar
     in_thread do
       with_fx :gverb, amp: 0.9, pre_amp: 1.1, mix: 0.9, spread: 1, amp_slide: bars.size * @bar, pre_amp_slide: bars.size * @bar do
-        live_audio :guitar, input: 1
+        with_fx :compressor do
+          live_audio :guitar, input: 1
+        end
       end
     end
     
@@ -123,7 +124,9 @@ class Song < Parent
     in_thread do
       with_fx :gverb, amp: 1, pre_amp: 1.2, mix: 0.9, spread: 1, damp: 0.2, amp_slide: bars.size * @bar, pre_amp_slide: bars.size * @bar, damp_slide: bars.size * @bar do
         with_fx :flanger, amp: 0.7, phase: 12, mix: 1, amp_slide: bars.size * @bar do
-          live_audio :guitar, input: 1
+          with_fx :compressor do
+            live_audio :guitar, input: 1
+          end
         end
       end
     end
@@ -148,7 +151,9 @@ class Song < Parent
       with_fx :echo, mix: 0.1, mix_slide: (bars.size - guitar_transition) * @bar do
         with_fx :gverb, pre_amp: 1.4, mix: 1, spread: 1, damp: 0, pre_amp_slide: (bars.size - guitar_transition) * @bar, damp_slide: (bars.size - guitar_transition) * @bar do
           with_fx :flanger, amp: 1, phase: 15, mix: 1, amp_slide: (bars.size - guitar_transition) * @bar do
-            live_audio :guitar, input: 1
+            with_fx :compressor do
+              live_audio :guitar, input: 1
+            end
           end
         end
       end
@@ -160,7 +165,9 @@ class Song < Parent
       with_fx :gverb, mix: 0.8, spread: 0.5, damp: 0.5, pre_amp_slide: guitar_transition * @bar, damp_slide: guitar_transition * @bar, spread_slide: guitar_transition * @bar do
         with_fx :flanger, amp: 1, mix: 0, mix_slide: guitar_transition * @bar do
           with_fx :echo, mix: 0, mix_slide: (bars.size - guitar_transition) * @bar do
-            live_audio :guitar, input: 1
+            with_fx :compressor do
+              live_audio :guitar, input: 1
+            end
           end
         end
       end
@@ -169,22 +176,26 @@ class Song < Parent
     
     # voice
     in_thread do
-      with_fx :reverb, amp: 1, pre_amp: 1.4, mix: 0.9, pre_amp_slide: (bars.size - voice_transition) * @bar, mix_slide: (bars.size - voice_transition) * @bar do
-        live_audio :voice, input: 2
+      with_fx :reverb, amp: 1, pre_amp: 1, mix: 0.5, pre_amp_slide: (bars.size - voice_transition) * @bar, mix_slide: (bars.size - voice_transition) * @bar do
+        with_fx :compressor, amp: 1 do
+          live_audio :voice, input: 2
+        end
       end
     end
     
     # voice wind down
     in_thread do
       sleep (bars.size - voice_transition) * @bar
-      with_fx :reverb, amp: 1, pre_amp: 1, mix: 0.75, pre_amp_slide: voice_transition * @bar, mix_slide: voice_transition * @bar do
-        live_audio :voice, input: 2
+      with_fx :reverb, amp: 1, pre_amp: 1, mix: 0.1, pre_amp_slide: voice_transition * @bar, mix_slide: voice_transition * @bar do
+        with_fx :compressor, amp: 1 do
+          live_audio :voice, input: 2
+        end
       end
     end
     
     in_thread do
       (bars.size - 1).times { play_hi_hats }
-      sample :drum_cymbal_open, amp: 0.15
+      sample :drum_cymbal_open, amp: 0.05
     end
     sleep bars.size * @bar
   end
@@ -200,15 +211,19 @@ song = Song.new
 
 # voice
 in_thread do
-  with_fx :reverb, mix: 0.6 do
-    live_audio :voice, input: 2
+  with_fx :reverb, mix: 0.3 do
+    with_fx :compressor, amp: 1 do
+      live_audio :voice, input: 2
+    end
   end
 end
 
 # live guitar
 in_thread do
   with_fx :gverb, pre_amp: 1.1, mix: 0.9, spread: 1 do
-    live_audio :guitar, input: 1
+    with_fx :compressor, amp: 0.2do
+      live_audio :guitar, input: 1
+    end
   end
 end
 
